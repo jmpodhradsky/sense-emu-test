@@ -1,4 +1,4 @@
-#had to update .venv file pyvenv.cfg to include system pkgs
+#had to update .venv file pyvenv.cfg o include system pkgs
 from sense_emu import SenseHat
 import time
 
