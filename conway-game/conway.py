@@ -73,9 +73,24 @@ def main():
     # Initialize the two buffers for double buffering
     current_board = create_random_board()
     next_board = create_empty_board()
+    reset_requested = False
+
+    def handle_joystick(event):
+        """Interrupt callback triggered in the background when the joystick moves."""
+        nonlocal reset_requested
+        if event.action == "pressed":
+            reset_requested = True
+
+    # Register the interrupt callback for any joystick press
+    sense.stick.direction_any = handle_joystick
 
     try:
         while True:
+            # Safely apply the joystick reset at the start of a frame
+            if reset_requested:
+                current_board = create_random_board()
+                reset_requested = False
+
             # Render the current board state to the 8x8 LED matrix
             sense.set_pixels(flatten_board(current_board))
 
