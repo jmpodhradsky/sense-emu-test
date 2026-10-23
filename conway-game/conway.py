@@ -1,7 +1,7 @@
-#had to update .venv file pyvenv.cfg o include system pkgs
+#had to update .venv file pyvenv.cfg to include system pkgs
 import random
 import time
-from sense_emu import SenseHat
+from sense_hat import SenseHat
 
 GRID_SIZE = 8
 ALIVE_COLOR = [0, 255, 0]  # Green
