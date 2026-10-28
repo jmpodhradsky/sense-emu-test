@@ -90,6 +90,27 @@ class ConwayApp(BaseApp):
         """Generate a fresh random board whenever Conway is opened."""
         self.reset_board()
 
+    def draw_preview(self, sense):
+        """Display custom 'LIFE' pixel art in the App Picker."""
+        L = [0, 255, 100]   # Green
+        I = [0, 200, 255]   # Cyan
+        F = [255, 180, 0]   # Amber
+        E = [255, 50, 200]  # Magenta
+        _ = [0, 0, 0]       # Off
+
+        life_text = [
+            L, _, _, _, I, I, I, _,
+            L, _, _, _, _, I, _, _,
+            L, _, _, _, _, I, _, _,
+            L, L, L, _, I, I, I, _,
+            F, F, F, _, E, E, E, _,
+            F, F, _, _, E, E, _, _,
+            F, _, _, _, E, _, _, _,
+            F, _, _, _, E, E, E, _,
+        ]
+
+        sense.set_pixels(life_text)
+
     def reset_board(self):
         """Randomize the current board and clear the secondary buffer."""
         self.current_board = create_random_board()
