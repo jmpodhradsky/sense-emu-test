@@ -1,7 +1,6 @@
-from sense_emu import SenseHat
 import time
 
-sense = SenseHat()
+from base_app import BaseApp
 
 # Each digit (0-9) is drawn on a 4x4 mini-grid (16 pixels per digit).
 # 1 = LED on, 0 = LED off.
@@ -63,11 +62,11 @@ minuteColour = [0, 255, 255]  # Cyan for bottom row (minutes)
 empty = [0, 0, 0]             # Off / black
 
 
-def update_clock():
-    """Build and display the current time on the 8x8 LED grid."""
+def build_clock_pixels(struct_time=None):
+    """Build the 64-pixel list for the 12-hour staggered clock display."""
     clockImage = [0] * 64
 
-    current_time = time.localtime()
+    current_time = struct_time or time.localtime()
     hour = current_time.tm_hour % 12 or 12  # Convert 0-23 into 12-hour format (1-12)
     minute = current_time.tm_min
 
@@ -75,8 +74,8 @@ def update_clock():
     pixelOffset = 0
     index = 0
 
-    for indexLoop in range(0, 4):
-        for counterLoop in range(0, 4):
+    for indexLoop in range(4):
+        for counterLoop in range(4):
             # Shift top row 1 pixel left so hours start at (0,0)
             if counterLoop > 0:
                 # Top-left quadrant: Hour tens digit (columns 0-2)
@@ -94,7 +93,7 @@ def update_clock():
         index = index + 4
 
     # Paint the 1s and 0s with actual RGB colors
-    for index in range(0, 64):
+    for index in range(64):
         if clockImage[index]:
             if index < 32:
                 clockImage[index] = hourColour
@@ -103,15 +102,32 @@ def update_clock():
         else:
             clockImage[index] = empty
 
-    sense.low_light = True
-    sense.set_pixels(clockImage)
+    return clockImage
+
+
+class ClockApp(BaseApp):
+    """Homepage clock app displaying 12-hour time on the 8x8 grid."""
+
+    name = "Clock"
+    icon_letter = "T"
+    icon_color = (0, 255, 255)
+    frame_delay = 1.0
+    low_light = True
+
+    def draw(self, sense):
+        """Render the current time onto the Sense HAT LED matrix."""
+        sense.set_pixels(build_clock_pixels())
 
 
 if __name__ == "__main__":
+    from sense_emu import SenseHat
+
+    sense = SenseHat()
+    app = ClockApp()
+    sense.low_light = app.low_light
     try:
         while True:
-            update_clock()
-            time.sleep(1)
+            app.draw(sense)
+            time.sleep(app.frame_delay)
     except KeyboardInterrupt:
         sense.clear()
-

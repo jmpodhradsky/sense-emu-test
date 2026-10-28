@@ -1,0 +1,133 @@
+# had to update .venv file pyvenv.cfg to include system pkgs
+import random
+import sys
+import time
+from pathlib import Path
+
+# Allow running this file directly (`python3 conway_game/conway.py`) as well as via `main.py`
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from base_app import BaseApp
+
+GRID_SIZE = 8
+ALIVE_COLOR = [0, 255, 0]  # Green
+DEAD_COLOR = [0, 0, 0]     # Off
+FRAME_DELAY = 0.5          # Seconds between generations
+
+
+def create_empty_board():
+    """Create an 8x8 2D list initialized with dead cells."""
+    return [[DEAD_COLOR for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
+
+
+def create_random_board(alive_probability=0.35):
+    """Create an 8x8 2D list with randomly placed living cells."""
+    board = create_empty_board()
+    for row in range(GRID_SIZE):
+        for col in range(GRID_SIZE):
+            if random.random() < alive_probability:
+                board[row][col] = ALIVE_COLOR
+    return board
+
+
+def count_neighbors(board, row, col):
+    """Count the living neighbors around (row, col) safely within 8x8 boundaries."""
+    alive_neighbors = 0
+    for row_offset in (-1, 0, 1):
+        for col_offset in (-1, 0, 1):
+            if row_offset == 0 and col_offset == 0:
+                continue  # Skip the cell itself
+
+            neighbor_row = row + row_offset
+            neighbor_col = col + col_offset
+
+            # Check boundaries to prevent out-of-index errors
+            if (
+                0 <= neighbor_row < GRID_SIZE
+                and 0 <= neighbor_col < GRID_SIZE
+                and board[neighbor_row][neighbor_col] == ALIVE_COLOR
+            ):
+                alive_neighbors += 1
+
+    return alive_neighbors
+
+
+def compute_next_generation(current_board, next_board):
+    """
+    Read from current_board, apply Conway's rules, and write the result
+    into next_board (double buffering).
+    """
+    for row in range(GRID_SIZE):
+        for col in range(GRID_SIZE):
+            neighbors = count_neighbors(current_board, row, col)
+            is_alive = current_board[row][col] == ALIVE_COLOR
+
+            if (is_alive and neighbors in (2, 3)) or (not is_alive and neighbors == 3):
+                next_board[row][col] = ALIVE_COLOR
+            else:
+                next_board[row][col] = DEAD_COLOR
+
+
+def flatten_board(board):
+    """Flatten the 8x8 2D board into a 64-element list for sense.set_pixels()."""
+    return [pixel for row in board for pixel in row]
+
+
+class ConwayApp(BaseApp):
+    """Conway's Game of Life app for the 8x8 Sense HAT grid."""
+
+    name = "Conway"
+    icon_letter = "C"
+    icon_color = (0, 255, 0)  # Green preview letter in the App Picker
+    frame_delay = FRAME_DELAY
+    low_light = False
+
+    def __init__(self):
+        self.current_board = create_random_board()
+        self.next_board = create_empty_board()
+
+    def start(self):
+        """Generate a fresh random board whenever Conway is opened."""
+        self.reset_board()
+
+    def reset_board(self):
+        """Randomize the current board and clear the secondary buffer."""
+        self.current_board = create_random_board()
+        self.next_board = create_empty_board()
+
+    # All 4 directions randomize the board for now; easy to customize individually later!
+    def on_up(self):
+        self.reset_board()
+
+    def on_down(self):
+        self.reset_board()
+
+    def on_left(self):
+        self.reset_board()
+
+    def on_right(self):
+        self.reset_board()
+
+    def draw(self, sense):
+        """Render the current generation and advance the board by one step."""
+        sense.set_pixels(flatten_board(self.current_board))
+        compute_next_generation(self.current_board, self.next_board)
+        self.current_board, self.next_board = self.next_board, self.current_board
+
+
+if __name__ == "__main__":
+    from sense_emu import SenseHat
+
+    sense = SenseHat()
+    app = ConwayApp()
+    app.start()
+    sense.low_light = app.low_light
+    try:
+        while True:
+            for event in sense.stick.get_events():
+                if event.action == "pressed":
+                    app.reset_board()
+            app.draw(sense)
+            time.sleep(app.frame_delay)
+    except KeyboardInterrupt:
+        sense.clear()
