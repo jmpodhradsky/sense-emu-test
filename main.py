@@ -48,15 +48,6 @@ def main():
 
                 direction = event.direction
 
-                # Universal Home Button: Center-click ("middle") always goes back to Clock
-                if direction == "middle":
-                    if state != STATE_HOME:
-                        state = STATE_HOME
-                        active_app = home_app
-                        apply_hardware_settings(sense, home_app.low_light)
-                        next_draw_time = 0.0
-                    continue
-
                 # State 1: On the Clock Homepage
                 if state == STATE_HOME:
                     if direction == "right":
@@ -77,17 +68,22 @@ def main():
                     elif direction == "left":
                         selected_app_index = (selected_app_index - 1) % len(apps)
                         apps[selected_app_index].draw_preview(sense)
-                    elif direction == "up":
-                        # Launch the previewed app!
+                    elif direction == "middle":
+                        # Center-click launches the previewed app!
                         state = STATE_APP
                         active_app = apps[selected_app_index]
                         active_app.start()
                         apply_hardware_settings(sense, active_app.low_light)
                         next_draw_time = 0.0
 
-                # State 3: Inside a running App (route 4 directions to the app's methods)
+                # State 3: Inside a running App (route 4 directions to the app, middle exits to Clock)
                 elif state == STATE_APP:
-                    if direction == "up":
+                    if direction == "middle":
+                        state = STATE_HOME
+                        active_app = home_app
+                        apply_hardware_settings(sense, home_app.low_light)
+                        next_draw_time = 0.0
+                    elif direction == "up":
                         active_app.on_up()
                         next_draw_time = 0.0
                     elif direction == "down":
