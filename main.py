@@ -25,8 +25,10 @@ def main():
     # Homepage app (always starts here and returns here on Center-click)
     home_app = ClockApp()
 
-    # List of launchable apps. To add a new app later, import it and add it here!
+    # List of all apps in the carousel (index 0 is the Clock homepage).
+    # To add a new app later, import it and add it here!
     apps = [
+        home_app,
         ConwayApp(),
     ]
 
@@ -52,11 +54,12 @@ def main():
                 if state == STATE_HOME:
                     if direction == "right":
                         state = STATE_PICKER
+                        selected_app_index = 1 % len(apps)
                         apply_hardware_settings(sense, False)
                         apps[selected_app_index].draw_preview(sense)
                     elif direction == "left":
                         state = STATE_PICKER
-                        selected_app_index = (selected_app_index - 1) % len(apps)
+                        selected_app_index = (len(apps) - 1) % len(apps)
                         apply_hardware_settings(sense, False)
                         apps[selected_app_index].draw_preview(sense)
 
@@ -69,10 +72,13 @@ def main():
                         selected_app_index = (selected_app_index - 1) % len(apps)
                         apps[selected_app_index].draw_preview(sense)
                     elif direction == "middle":
-                        # Center-click launches the previewed app!
-                        state = STATE_APP
+                        # Center-click launches the previewed app (or returns to Clock if index 0)
                         active_app = apps[selected_app_index]
-                        active_app.start()
+                        if active_app is home_app:
+                            state = STATE_HOME
+                        else:
+                            state = STATE_APP
+                            active_app.start()
                         apply_hardware_settings(sense, active_app.low_light)
                         next_draw_time = 0.0
 

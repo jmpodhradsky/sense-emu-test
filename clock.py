@@ -118,6 +118,25 @@ class ClockApp(BaseApp):
         """Render the current time onto the Sense HAT LED matrix."""
         sense.set_pixels(build_clock_pixels())
 
+    def draw_preview(self, sense):
+        """Display an 8x8 analog clock icon in the App Picker."""
+        B = [0, 200, 255]    # Cyan clock bezel
+        H = [255, 255, 255]  # White clock hands (pointing to 12 and 3)
+        _ = [0, 0, 0]        # Off
+
+        clock_icon = [
+            _, _, B, B, B, B, _, _,
+            _, B, _, H, _, _, B, _,
+            B, _, _, H, _, _, _, B,
+            B, _, _, H, H, H, _, B,
+            B, _, _, _, _, _, _, B,
+            B, _, _, _, _, _, _, B,
+            _, B, _, _, _, _, B, _,
+            _, _, B, B, B, B, _, _,
+        ]
+
+        sense.set_pixels(clock_icon)
+
 
 if __name__ == "__main__":
     from sense_emu import SenseHat
