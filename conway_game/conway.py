@@ -14,6 +14,7 @@ GRID_SIZE = 8
 ALIVE_COLOR = [0, 255, 0]        # Green
 STILL_ALERT_COLOR = [255, 0, 0]  # Red flash for frozen still lifes
 DEAD_COLOR = [0, 0, 0]           # Off
+BRIGHTNESS = 0.5                 # Software dimmer dial (0.0 to 1.0)
 FRAME_DELAY = 0.5                # Seconds between generations
 HISTORY_SIZE = 8                 # Number of prior generations to remember
 
@@ -81,6 +82,11 @@ def compute_next_generation(current_board, next_board):
                 next_board[row][col] = DEAD_COLOR
 
 
+def scale_color(color, brightness=BRIGHTNESS):
+    """Dim an [R, G, B] color by the given brightness factor (0.0 to 1.0)."""
+    return [int(channel * brightness) for channel in color]
+
+
 def random_party_color():
     """Generate a bright, saturated random [R, G, B] color for Oscillator Party Mode."""
     channels = [
@@ -92,10 +98,10 @@ def random_party_color():
     return channels
 
 
-def flatten_board(board, stuck_state=None, grace_remaining=0):
+def flatten_board(board, stuck_state=None, grace_remaining=0, brightness=BRIGHTNESS):
     """
     Flatten the 8x8 2D board into a 64-element pixel list for sense.set_pixels(),
-    applying visual effects when the board is in a stuck state.
+    applying visual effects and software brightness scaling.
     """
     pixels = []
     for row in board:
@@ -105,11 +111,11 @@ def flatten_board(board, stuck_state=None, grace_remaining=0):
             elif stuck_state == STATE_STILL:
                 # Alternate between Green and Red across the 8 grace frames
                 color = ALIVE_COLOR if grace_remaining % 2 == 0 else STILL_ALERT_COLOR
-                pixels.append(color)
+                pixels.append(scale_color(color, brightness))
             elif stuck_state == STATE_OSCILLATOR:
-                pixels.append(random_party_color())
+                pixels.append(scale_color(random_party_color(), brightness))
             else:
-                pixels.append(ALIVE_COLOR)
+                pixels.append(scale_color(ALIVE_COLOR, brightness))
     return pixels
 
 
@@ -143,7 +149,7 @@ class ConwayApp(BaseApp):
     icon_letter = "C"
     icon_color = (0, 255, 0)  # Green preview letter in the App Picker
     frame_delay = FRAME_DELAY
-    low_light = False
+    low_light = True
 
     def __init__(self):
         self.reset_board()
@@ -154,11 +160,11 @@ class ConwayApp(BaseApp):
 
     def draw_preview(self, sense):
         """Display custom 'LIFE' pixel art in the App Picker."""
-        L = [0, 255, 100]   # Green
-        I = [0, 200, 255]   # Cyan
-        F = [255, 180, 0]   # Amber
-        E = [255, 50, 200]  # Magenta
-        _ = [0, 0, 0]       # Off
+        L = scale_color([0, 255, 100])   # Green
+        I = scale_color([0, 200, 255])   # Cyan
+        F = scale_color([255, 180, 0])   # Amber
+        E = scale_color([255, 50, 200])  # Magenta
+        _ = [0, 0, 0]                    # Off
 
         life_text = [
             L, _, _, _, I, I, I, _,

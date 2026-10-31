@@ -56,12 +56,12 @@ def main():
                     if direction == "right":
                         state = STATE_PICKER
                         selected_app_index = 1 % len(apps)
-                        apply_hardware_settings(sense, False)
+                        apply_hardware_settings(sense, True)
                         apps[selected_app_index].draw_preview(sense)
                     elif direction == "left":
                         state = STATE_PICKER
                         selected_app_index = (len(apps) - 1) % len(apps)
-                        apply_hardware_settings(sense, False)
+                        apply_hardware_settings(sense, True)
                         apps[selected_app_index].draw_preview(sense)
 
                 # State 2: In the App Picker (previewing an app icon)
