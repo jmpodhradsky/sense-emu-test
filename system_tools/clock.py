@@ -1,4 +1,9 @@
+import sys
 import time
+from pathlib import Path
+
+# Allow running this file directly (`python3 system_tools/clock.py`) as well as via `main.py`
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from base_app import BaseApp, get_sense_hat, scale_color, scale_pixels
 

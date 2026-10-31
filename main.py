@@ -1,9 +1,9 @@
 import time
 
 from base_app import get_sense_hat
-from clock import ClockApp
 from conway_game.conway import ConwayApp
 from system_tools.brightness import BrightnessApp
+from system_tools.clock import ClockApp
 
 # Three states for the launcher state machine
 STATE_HOME = "HOME"      # Default Clock homepage
