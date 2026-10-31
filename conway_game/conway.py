@@ -21,10 +21,12 @@ STATE_DEAD = "DEAD"
 STATE_STILL = "STILL"
 STATE_OSCILLATOR = "OSCILLATOR"
 
+PARTY_FRAMES = 16          # Final 16 frames (8.0s) of STATE_OSCILLATOR light up in Party Mode
+
 GRACE_FRAMES = {
     STATE_DEAD: 1,         # 0.5s on a dark screen before resetting
     STATE_STILL: 8,        # 4.0s (8 frames) flashing Green/Red before resetting
-    STATE_OSCILLATOR: 16,   # 8.0s PARTY MODE WOOO
+    STATE_OSCILLATOR: 22,  # 6 frames spinning in Green + 16 frames (8.0s) PARTY MODE WOOO
 }
 
 
@@ -106,7 +108,7 @@ def flatten_board(board, stuck_state=None, grace_remaining=0):
                 # Alternate between Green and Red across the 8 grace frames
                 color = ALIVE_COLOR if grace_remaining % 2 == 0 else STILL_ALERT_COLOR
                 pixels.append(scale_color(color))
-            elif stuck_state == STATE_OSCILLATOR:
+            elif stuck_state == STATE_OSCILLATOR and grace_remaining <= PARTY_FRAMES:
                 pixels.append(scale_color(random_party_color()))
             else:
                 pixels.append(scale_color(ALIVE_COLOR))
