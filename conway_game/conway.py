@@ -24,7 +24,7 @@ STATE_OSCILLATOR = "OSCILLATOR"
 GRACE_FRAMES = {
     STATE_DEAD: 1,         # 0.5s on a dark screen before resetting
     STATE_STILL: 8,        # 4.0s (8 frames) flashing Green/Red before resetting
-    STATE_OSCILLATOR: 8,   # 4.0s to watch repeating loops party before resetting
+    STATE_OSCILLATOR: 16,   # 8.0s PARTY MODE WOOO
 }
 
 
