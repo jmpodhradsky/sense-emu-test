@@ -1,6 +1,6 @@
 import time
 
-from base_app import BaseApp
+from base_app import BaseApp, get_sense_hat, scale_color, scale_pixels
 
 # Each digit (0-9) is drawn on a 4x4 mini-grid (16 pixels per digit).
 # 1 = LED on, 0 = LED off.
@@ -93,12 +93,14 @@ def build_clock_pixels(struct_time=None):
         index = index + 4
 
     # Paint the 1s and 0s with actual RGB colors
+    dim_hour = scale_color(hourColour)
+    dim_minute = scale_color(minuteColour)
     for index in range(64):
         if clockImage[index]:
             if index < 32:
-                clockImage[index] = hourColour
+                clockImage[index] = dim_hour
             else:
-                clockImage[index] = minuteColour
+                clockImage[index] = dim_minute
         else:
             clockImage[index] = empty
 
@@ -135,13 +137,11 @@ class ClockApp(BaseApp):
             _, _, B, B, B, B, _, _,
         ]
 
-        sense.set_pixels(clock_icon)
+        sense.set_pixels(scale_pixels(clock_icon))
 
 
 if __name__ == "__main__":
-    from sense_emu import SenseHat
-
-    sense = SenseHat()
+    sense = get_sense_hat()
     app = ClockApp()
     sense.low_light = app.low_light
     try:

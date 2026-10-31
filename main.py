@@ -1,10 +1,9 @@
 import time
 
-from sense_emu import SenseHat
-# from sense_hat import SenseHat
-
+from base_app import get_sense_hat
 from clock import ClockApp
 from conway_game.conway import ConwayApp
+from system_tools.brightness import BrightnessApp
 
 # Three states for the launcher state machine
 STATE_HOME = "HOME"      # Default Clock homepage
@@ -21,7 +20,7 @@ def apply_hardware_settings(sense, low_light):
 
 
 def main():
-    sense = SenseHat()
+    sense = get_sense_hat()
 
     # Homepage app (always starts here and returns here on Center-click)
     home_app = ClockApp()
@@ -31,6 +30,7 @@ def main():
     apps = [
         home_app,
         ConwayApp(),
+        BrightnessApp(),
     ]
 
     state = STATE_HOME

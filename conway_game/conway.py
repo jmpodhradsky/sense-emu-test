@@ -8,13 +8,12 @@ from pathlib import Path
 # Allow running this file directly (`python3 conway_game/conway.py`) as well as via `main.py`
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from base_app import BaseApp
+from base_app import BaseApp, get_sense_hat, scale_color
 
 GRID_SIZE = 8
 ALIVE_COLOR = [0, 255, 0]        # Green
 STILL_ALERT_COLOR = [255, 0, 0]  # Red flash for frozen still lifes
 DEAD_COLOR = [0, 0, 0]           # Off
-BRIGHTNESS = 0.5                 # Software dimmer dial (0.0 to 1.0)
 FRAME_DELAY = 0.5                # Seconds between generations
 HISTORY_SIZE = 8                 # Number of prior generations to remember
 
@@ -82,11 +81,6 @@ def compute_next_generation(current_board, next_board):
                 next_board[row][col] = DEAD_COLOR
 
 
-def scale_color(color, brightness=BRIGHTNESS):
-    """Dim an [R, G, B] color by the given brightness factor (0.0 to 1.0)."""
-    return [int(channel * brightness) for channel in color]
-
-
 def random_party_color():
     """Generate a bright, saturated random [R, G, B] color for Oscillator Party Mode."""
     channels = [
@@ -98,7 +92,7 @@ def random_party_color():
     return channels
 
 
-def flatten_board(board, stuck_state=None, grace_remaining=0, brightness=BRIGHTNESS):
+def flatten_board(board, stuck_state=None, grace_remaining=0):
     """
     Flatten the 8x8 2D board into a 64-element pixel list for sense.set_pixels(),
     applying visual effects and software brightness scaling.
@@ -111,11 +105,11 @@ def flatten_board(board, stuck_state=None, grace_remaining=0, brightness=BRIGHTN
             elif stuck_state == STATE_STILL:
                 # Alternate between Green and Red across the 8 grace frames
                 color = ALIVE_COLOR if grace_remaining % 2 == 0 else STILL_ALERT_COLOR
-                pixels.append(scale_color(color, brightness))
+                pixels.append(scale_color(color))
             elif stuck_state == STATE_OSCILLATOR:
-                pixels.append(scale_color(random_party_color(), brightness))
+                pixels.append(scale_color(random_party_color()))
             else:
-                pixels.append(scale_color(ALIVE_COLOR, brightness))
+                pixels.append(scale_color(ALIVE_COLOR))
     return pixels
 
 
@@ -224,9 +218,7 @@ class ConwayApp(BaseApp):
 
 
 if __name__ == "__main__":
-    from sense_emu import SenseHat
-
-    sense = SenseHat()
+    sense = get_sense_hat()
     app = ConwayApp()
     app.start()
     sense.low_light = app.low_light
