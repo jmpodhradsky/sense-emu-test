@@ -2,6 +2,7 @@
 import random
 import sys
 import time
+from collections import deque
 from pathlib import Path
 
 # Allow running this file directly (`python3 conway_game/conway.py`) as well as via `main.py`
@@ -10,9 +11,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from base_app import BaseApp
 
 GRID_SIZE = 8
-ALIVE_COLOR = [0, 255, 0]  # Green
-DEAD_COLOR = [0, 0, 0]     # Off
-FRAME_DELAY = 0.5          # Seconds between generations
+ALIVE_COLOR = [0, 255, 0]        # Green
+STILL_ALERT_COLOR = [255, 0, 0]  # Red flash for frozen still lifes
+DEAD_COLOR = [0, 0, 0]           # Off
+FRAME_DELAY = 0.5                # Seconds between generations
+HISTORY_SIZE = 8                 # Number of prior generations to remember
+
+STATE_DEAD = "DEAD"
+STATE_STILL = "STILL"
+STATE_OSCILLATOR = "OSCILLATOR"
+
+GRACE_FRAMES = {
+    STATE_DEAD: 1,         # 0.5s on a dark screen before resetting
+    STATE_STILL: 8,        # 4.0s (8 frames) flashing Green/Red before resetting
+    STATE_OSCILLATOR: 8,   # 4.0s to watch repeating loops party before resetting
+}
 
 
 def create_empty_board():
@@ -68,9 +81,59 @@ def compute_next_generation(current_board, next_board):
                 next_board[row][col] = DEAD_COLOR
 
 
-def flatten_board(board):
-    """Flatten the 8x8 2D board into a 64-element list for sense.set_pixels()."""
-    return [pixel for row in board for pixel in row]
+def random_party_color():
+    """Generate a bright, saturated random [R, G, B] color for Oscillator Party Mode."""
+    channels = [
+        random.randint(200, 255),  # One high channel guarantees brightness
+        random.randint(0, 50),     # One low channel guarantees vivid color (not white)
+        random.randint(0, 255),    # One free channel for variety
+    ]
+    random.shuffle(channels)
+    return channels
+
+
+def flatten_board(board, stuck_state=None, grace_remaining=0):
+    """
+    Flatten the 8x8 2D board into a 64-element pixel list for sense.set_pixels(),
+    applying visual effects when the board is in a stuck state.
+    """
+    pixels = []
+    for row in board:
+        for cell in row:
+            if cell != ALIVE_COLOR:
+                pixels.append(DEAD_COLOR)
+            elif stuck_state == STATE_STILL:
+                # Alternate between Green and Red across the 8 grace frames
+                color = ALIVE_COLOR if grace_remaining % 2 == 0 else STILL_ALERT_COLOR
+                pixels.append(color)
+            elif stuck_state == STATE_OSCILLATOR:
+                pixels.append(random_party_color())
+            else:
+                pixels.append(ALIVE_COLOR)
+    return pixels
+
+
+def snapshot_board(board):
+    """Create a lightweight 64-boolean tuple representing living cells on the board."""
+    return tuple(
+        pixel == ALIVE_COLOR
+        for row in board
+        for pixel in row
+    )
+
+
+def detect_stuck_state(snapshot, history):
+    """
+    Check if the current board snapshot is stuck.
+    Returns STATE_DEAD, STATE_STILL, STATE_OSCILLATOR, or None.
+    """
+    if not any(snapshot):
+        return STATE_DEAD
+    if history and snapshot == history[-1]:
+        return STATE_STILL
+    if snapshot in history:
+        return STATE_OSCILLATOR
+    return None
 
 
 class ConwayApp(BaseApp):
@@ -83,8 +146,7 @@ class ConwayApp(BaseApp):
     low_light = False
 
     def __init__(self):
-        self.current_board = create_random_board()
-        self.next_board = create_empty_board()
+        self.reset_board()
 
     def start(self):
         """Generate a fresh random board whenever Conway is opened."""
@@ -112,9 +174,12 @@ class ConwayApp(BaseApp):
         sense.set_pixels(life_text)
 
     def reset_board(self):
-        """Randomize the current board and clear the secondary buffer."""
+        """Randomize the current board, clear the secondary buffer, and reset history."""
         self.current_board = create_random_board()
         self.next_board = create_empty_board()
+        self.history = deque(maxlen=HISTORY_SIZE)
+        self.stuck_state = None
+        self.grace_remaining = 0
 
     # All 4 directions randomize the board for now; easy to customize individually later!
     def on_up(self):
@@ -131,7 +196,23 @@ class ConwayApp(BaseApp):
 
     def draw(self, sense):
         """Render the current generation and advance the board by one step."""
-        sense.set_pixels(flatten_board(self.current_board))
+        if self.stuck_state is None:
+            snapshot = snapshot_board(self.current_board)
+            self.stuck_state = detect_stuck_state(snapshot, self.history)
+            self.history.append(snapshot)
+            if self.stuck_state is not None:
+                self.grace_remaining = GRACE_FRAMES[self.stuck_state]
+
+        sense.set_pixels(
+            flatten_board(self.current_board, self.stuck_state, self.grace_remaining)
+        )
+
+        if self.stuck_state is not None:
+            self.grace_remaining -= 1
+            if self.grace_remaining <= 0:
+                self.reset_board()
+                return
+
         compute_next_generation(self.current_board, self.next_board)
         self.current_board, self.next_board = self.next_board, self.current_board
 
